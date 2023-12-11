@@ -26,7 +26,7 @@ jobs:
       - name: Archive build artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: dist-without-markdown
+          name: build-dir
           path: |
             build 
     
@@ -39,3 +39,13 @@ jobs:
         uses: 'google-github-actions/auth@v2'
         with:
           credentials_json: '${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}'  
+      - name: Download a single artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: build-dir
+        
+      - id: 'upload-folder'
+        uses: 'google-github-actions/upload-cloud-storage@v1'
+        with:
+          path: 'build'
+          destination: 'bm-static-files'
