@@ -48,5 +48,4 @@ jobs:
       - id: 'upload-folder'
         uses: 'google-github-actions/upload-cloud-storage@v1'
         with:
-          path: 'build'
           destination: 'bm-static-files'
