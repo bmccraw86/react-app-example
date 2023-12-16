@@ -1,6 +1,9 @@
 name: staging
 
 env:
+  BUCKET_NAME: "bm-static-files"
+  RELEASE_TIMESTAMP: 
+  BUCKET_BACKUP_PATH: "backup1/"
   REACT_APP_P2C_API_URL: "https://p2capiingress.staging.neuralpayments.com"
 
 on: 
@@ -34,18 +37,39 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build]
     steps:
+      - name: Get current date
+        id: date
+        run: echo "::set-output name=RELEASE_TIMESTAMP::$(date +'%Y%m%d-%H%M%S')"
       - uses: actions/checkout@v4
       - id: 'auth'
         name: 'Authenticate to Google Cloud'
         uses: 'google-github-actions/auth@v2'
         with:
           credentials_json: '${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}'  
+
+      - name: 'Use gcloud CLI'
+        run: 'gcloud info'
+
+      - name: 'gsutil list buckets'
+        run: 'gsutil ls'
+
       - name: Download artifacts
         uses: actions/download-artifact@v3
+
+      - name: Backup Previous Build
+        run: |
+          gsutil mv gs://${{env.BUCKET_NAME}}/asset-manifest.json gs://${{env.BUCKET_NAME}}/_bak/${{ steps.date.outputs.date }}/
+          gsutil mv gs://${{env.BUCKET_NAME}}/favicon.ico gs://${{env.BUCKET_NAME}}/_bak/${{ steps.date.outputs.date }}/
+          gsutil mv gs://${{env.BUCKET_NAME}}/index.html gs://${{env.BUCKET_NAME}}/_bak/${{ steps.date.outputs.date }}/
+          gsutil mv gs://${{env.BUCKET_NAME}}/logo192.png gs://${{env.BUCKET_NAME}}/_bak/${{ steps.date.outputs.date }}/
+          gsutil mv gs://${{env.BUCKET_NAME}}/logo512.png gs://${{env.BUCKET_NAME}}/_bak/${{ steps.date.outputs.date }}/
+          gsutil mv gs://${{env.BUCKET_NAME}}/manifest.json gs://${{env.BUCKET_NAME}}/_bak/${{ steps.date.outputs.date }}/
+          gsutil mv gs://${{env.BUCKET_NAME}}/robots.txt gs://${{env.BUCKET_NAME}}/_bak/${{ steps.date.outputs.date }}/
+          gsutil mv gs://${{env.BUCKET_NAME}}/static/ gs://${{env.BUCKET_NAME}}/_bak/${{ steps.date.outputs.date }}/
         
       - id: 'upload-folder'
         uses: 'google-github-actions/upload-cloud-storage@v1'
         with:
-          destination: 'bm-static-files'
+          destination: ${{env.BUCKET_NAME}}
           parent: false
           path: 'build-artifacts'
