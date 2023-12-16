@@ -52,6 +52,7 @@ jobs:
 
       - name: 'gsutil list buckets'
         run: 'gsutil ls'
+        continue-on-error: true
 
       - name: Download artifacts
         uses: actions/download-artifact@v3
