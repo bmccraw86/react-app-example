@@ -77,3 +77,4 @@ jobs:
           destination: ${{env.BUCKET_NAME}}
           parent: false
           path: 'build-artifacts'
+          process_gcloudignore: false
