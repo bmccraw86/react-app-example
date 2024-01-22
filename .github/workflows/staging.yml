@@ -1,10 +1,4 @@
-name: staging
-
-env:
-  BUCKET_NAME: "bm-static-files"
-  BUCKET_BACKUP_PATH: "backup1/"
-  REACT_APP_P2C_API_URL: "https://p2capiingress.staging.neuralpayments.com"
-  RELEASE_DATE: "default_release_date"
+name: "Build and Deploy"
 
 on:
   workflow_dispatch:
@@ -40,7 +34,7 @@ jobs:
     env:
       BUCKET_NAME: "bm-static-files"
       BUCKET_BACKUP_PATH: "backup1/"
-      REACT_APP_P2C_API_URL: "https://p2capiingress.staging.neuralpayments.com"
+      REACT_APP_P2C_API_URL: "https://ingress.staging.mccrw.com"
       RELEASE_DATE: "default_release_date"
     steps:
       - name: Get current date
@@ -88,10 +82,10 @@ jobs:
     env:
       BUCKET_NAME: "bm-static-files2"
       BUCKET_BACKUP_PATH: "backup/"
-      REACT_APP_P2C_API_URL: "https://p2capiingress.neuralpayments.com"
+      REACT_APP_P2C_API_URL: "https://ingress.mccrw.com"
       RELEASE_DATE: "default_release_date"
     if:
-      false # Disables job
+      false # Disables job until
     steps:
       - name: Get current date
         id: date
