@@ -87,15 +87,11 @@ jobs:
     needs: [build, deploy-staging]
     env:
       BUCKET_NAME: "bm-static-files2"
-      BUCKET_BACKUP_PATH: "backup1/"
-      REACT_APP_P2C_API_URL: "https://p2capiingress.staging.neuralpayments.com"
+      BUCKET_BACKUP_PATH: "backup/"
+      REACT_APP_P2C_API_URL: "https://p2capiingress.neuralpayments.com"
       RELEASE_DATE: "default_release_date"
     if:
       false # Disables job
-    env:
-      BUCKET_NAME: "p2c.app.neuralpayments.com"
-      REACT_APP_P2C_API_URL: "https://p2capiingress.neuralpayments.com"
-      RELEASE_DATE: "default_release_date"
     steps:
       - name: Get current date
         id: date
@@ -110,8 +106,8 @@ jobs:
 
       - name: 'Set up Cloud SDK'
         uses: 'google-github-actions/setup-gcloud@v2'
-          with:
-            project_id: fine-serenity-390014
+        with:
+          project_id: fine-serenity-390014
 
       - name: Download artifacts
         uses: actions/download-artifact@v3
