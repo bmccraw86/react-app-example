@@ -6,9 +6,9 @@ env:
   REACT_APP_P2C_API_URL: "https://p2capiingress.staging.neuralpayments.com"
   RELEASE_DATE: "default_release_date"
 
-on: 
+on:
   workflow_dispatch:
-  push: 
+  push:
     branches: [pipeline]
   pull_request:
     branches: [main]
@@ -31,11 +31,17 @@ jobs:
         with:
           name: build-artifacts
           path: |
-            build 
-    
-  deploy:
+            build
+
+  deploy-staging:
     runs-on: ubuntu-latest
+    environment: staging
     needs: [build]
+    env:
+      BUCKET_NAME: "bm-static-files"
+      BUCKET_BACKUP_PATH: "backup1/"
+      REACT_APP_P2C_API_URL: "https://p2capiingress.staging.neuralpayments.com"
+      RELEASE_DATE: "default_release_date"
     steps:
       - name: Get current date
         id: date
@@ -50,28 +56,77 @@ jobs:
 
       - name: 'Set up Cloud SDK'
         uses: 'google-github-actions/setup-gcloud@v2'
-
-      - name: 'Use gcloud CLI'
-        run: 'gcloud info'
-
-      - name: 'gsutil list buckets'
-        run: 'gsutil ls'
-        continue-on-error: true
+          with:
+            project_id: build-390014
 
       - name: Download artifacts
         uses: actions/download-artifact@v3
 
       - name: Backup Previous Build
         run: |
-          gsutil mv gs://${{env.BUCKET_NAME}}/asset-manifest.json gs://${{env.BUCKET_NAME}}/_bak/${{ env.RELEASE_TIMESTAMP }}/
-          gsutil mv gs://${{env.BUCKET_NAME}}/favicon.ico gs://${{env.BUCKET_NAME}}/_bak/${{ env.RELEASE_TIMESTAMP }}/
-          gsutil mv gs://${{env.BUCKET_NAME}}/index.html gs://${{env.BUCKET_NAME}}/_bak/${{ env.RELEASE_TIMESTAMP }}/
-          gsutil mv gs://${{env.BUCKET_NAME}}/logo192.png gs://${{env.BUCKET_NAME}}/_bak/${{ env.RELEASE_TIMESTAMP }}/
-          gsutil mv gs://${{env.BUCKET_NAME}}/logo512.png gs://${{env.BUCKET_NAME}}/_bak/${{ env.RELEASE_TIMESTAMP }}/
-          gsutil mv gs://${{env.BUCKET_NAME}}/manifest.json gs://${{env.BUCKET_NAME}}/_bak/${{ env.RELEASE_TIMESTAMP }}/
-          gsutil mv gs://${{env.BUCKET_NAME}}/robots.txt gs://${{env.BUCKET_NAME}}/_bak/${{ env.RELEASE_TIMESTAMP }}/
-          gsutil mv gs://${{env.BUCKET_NAME}}/static/ gs://${{env.BUCKET_NAME}}/_bak/${{ env.RELEASE_TIMESTAMP }}/
-        
+          gsutil mv gs://${{env.BUCKET_NAME}}/asset-manifest.json gs://${{env.BUCKET_NAME}}/_bak/${{env.RELEASE_TIMESTAMP}}/
+          gsutil mv gs://${{env.BUCKET_NAME}}/favicon.ico gs://${{env.BUCKET_NAME}}/_bak/${{env.RELEASE_TIMESTAMP}}/
+          gsutil mv gs://${{env.BUCKET_NAME}}/index.html gs://${{env.BUCKET_NAME}}/_bak/${{env.RELEASE_TIMESTAMP}}/
+          gsutil mv gs://${{env.BUCKET_NAME}}/logo192.png gs://${{env.BUCKET_NAME}}/_bak/${{env.RELEASE_TIMESTAMP}}/
+          gsutil mv gs://${{env.BUCKET_NAME}}/logo512.png gs://${{env.BUCKET_NAME}}/_bak/${{env.RELEASE_TIMESTAMP}}/
+          gsutil mv gs://${{env.BUCKET_NAME}}/manifest.json gs://${{env.BUCKET_NAME}}/_bak/${{env.RELEASE_TIMESTAMP}}/
+          gsutil mv gs://${{env.BUCKET_NAME}}/robots.txt gs://${{env.BUCKET_NAME}}/_bak/${{env.RELEASE_TIMESTAMP}}/
+          gsutil mv gs://${{env.BUCKET_NAME}}/static/ gs://${{env.BUCKET_NAME}}/_bak/${{env.RELEASE_TIMESTAMP}}/
+
+      - id: 'upload-folder'
+        uses: 'google-github-actions/upload-cloud-storage@v1'
+        with:
+          destination: ${{env.BUCKET_NAME}}
+          parent: false
+          path: 'build-artifacts'
+
+
+  deploy-production:
+    runs-on: ubuntu-latest
+    environment: production
+    needs: [build, deploy-staging]
+    env:
+      BUCKET_NAME: "bm-static-files2"
+      BUCKET_BACKUP_PATH: "backup1/"
+      REACT_APP_P2C_API_URL: "https://p2capiingress.staging.neuralpayments.com"
+      RELEASE_DATE: "default_release_date"
+    if:
+      false # Disables job
+    env:
+      BUCKET_NAME: "p2c.app.neuralpayments.com"
+      REACT_APP_P2C_API_URL: "https://p2capiingress.neuralpayments.com"
+      RELEASE_DATE: "default_release_date"
+    steps:
+      - name: Get current date
+        id: date
+        run: echo "RELEASE_TIMESTAMP=$(date +'%Y%m%d-%H%M%S')" >> "$GITHUB_ENV"
+
+      - uses: actions/checkout@v4
+      - id: 'auth'
+        name: 'Authenticate to Google Cloud'
+        uses: 'google-github-actions/auth@v2'
+        with:
+          credentials_json: '${{ secrets.PROD_GOOGLE_APPLICATION_CREDENTIALS }}'
+
+      - name: 'Set up Cloud SDK'
+        uses: 'google-github-actions/setup-gcloud@v2'
+          with:
+            project_id: fine-serenity-390014
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v3
+
+      - name: Backup Previous Build
+        run: |
+          gsutil mv gs://${{env.BUCKET_NAME}}/asset-manifest.json gs://${{env.BUCKET_NAME}}/_bak/${{env.RELEASE_TIMESTAMP}}/
+          gsutil mv gs://${{env.BUCKET_NAME}}/favicon.ico gs://${{env.BUCKET_NAME}}/_bak/${{env.RELEASE_TIMESTAMP}}/
+          gsutil mv gs://${{env.BUCKET_NAME}}/index.html gs://${{env.BUCKET_NAME}}/_bak/${{env.RELEASE_TIMESTAMP}}/
+          gsutil mv gs://${{env.BUCKET_NAME}}/logo192.png gs://${{env.BUCKET_NAME}}/_bak/${{env.RELEASE_TIMESTAMP}}/
+          gsutil mv gs://${{env.BUCKET_NAME}}/logo512.png gs://${{env.BUCKET_NAME}}/_bak/${{env.RELEASE_TIMESTAMP}}/
+          gsutil mv gs://${{env.BUCKET_NAME}}/manifest.json gs://${{env.BUCKET_NAME}}/_bak/${{env.RELEASE_TIMESTAMP}}/
+          gsutil mv gs://${{env.BUCKET_NAME}}/robots.txt gs://${{env.BUCKET_NAME}}/_bak/${{env.RELEASE_TIMESTAMP}}/
+          gsutil mv gs://${{env.BUCKET_NAME}}/static/ gs://${{env.BUCKET_NAME}}/_bak/${{env.RELEASE_TIMESTAMP}}/
+
       - id: 'upload-folder'
         uses: 'google-github-actions/upload-cloud-storage@v1'
         with:
